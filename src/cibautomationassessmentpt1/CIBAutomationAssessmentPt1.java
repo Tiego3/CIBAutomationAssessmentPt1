@@ -7,8 +7,6 @@ package cibautomationassessmentpt1;
 
 
 import java.net.*;
-import java.util.*;
-import org.json.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
@@ -24,8 +22,13 @@ public class CIBAutomationAssessmentPt1  {
     /**
      * @param args the command line arguments
      */
+    
+    /*Declare and initialise variables*/
+    //Connection
     private URL url;
     private HttpURLConnection con;
+    
+    //Excel
     private InputStream inputStream;
     private BufferedReader reader;
     private StringBuffer listOfDogs;
@@ -33,31 +36,32 @@ public class CIBAutomationAssessmentPt1  {
     private Sheet urlsheet;
     private Row row;
     private Cell cell;
-    String workingDir = System.getProperty("user.dir");
     
+    //Working directory 
+    final String workingDir = System.getProperty("user.dir");
+    
+    //Extent Report
+    private static ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter(System.getProperty("user.dir")+"\\CIBAutomationAssessmentPt1.html");
+    private static ExtentReports extReport = new ExtentReports();
+    private static ExtentTest test = extReport.createTest("CIBAutomationAssessmentPt1");  
 //    ExtentReports report; 
 //    ExtentTest logStatus;
 //    ExtentHtmlReporter  extentHtmlReporter;
-// 
     public static void main(String[] args) throws Exception {
         
         // TODO code application logic here
+         extReport.attachReporter(htmlReporter);
               
         //Initialize contructor object
         CIBAutomationAssessmentPt1 cib = new CIBAutomationAssessmentPt1();
-        
-        //Declare and initialise variable for Extent  Report
-        ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter(System.getProperty("user.dir")+"\\CIBAutomationAssessmentPt1.html");
-        ExtentReports extReport = new ExtentReports();
-        extReport.attachReporter(htmlReporter);
-        ExtentTest test = extReport.createTest("CIBAutomationAssessmentPt1");
-               
+            
         /*Initialize html string variables   */
         //Calling the getURL method that returns the api url according to the name of column in the file
-        String urlAllDogsString = cib.getUrl("AllDogBreedsListURL");
+        String urlAllDogsString = "AllDogBreedsListURL";
+       // String urlAllDogsString = cib.getUrlFromExcel("AllDogBreedsListURL");
         String listOfAllDogs;
-        String urlRetreiverSubs = cib.getUrl("AllRetrieverBreedsListURL");
-        String urlrdmImgGolden = cib.getUrl("RandomRetrieverImgURL");
+        String urlRetreiverSubs = cib.getUrlFromExcel("AllRetrieverBreedsListURL");
+        String urlrdmImgGolden = cib.getUrlFromExcel("RandomRetrieverImgURL");
         
         //print list of all dog breeds
         System.out.println(cib.getRequestList(urlAllDogsString));
@@ -89,62 +93,80 @@ public class CIBAutomationAssessmentPt1  {
     
     //Get urls from excel sheet 
     //Returns the api url according to the name of column in the file
-    public String getUrl(String urlString) throws Exception{
-       
-        /*Declare and initialise objects*/
-        //Define file path - the file is located within the project - 
-        //Get the current working to locate the file should project be moved
-        String excelFilePath = workingDir+"\\APIURL.xlsx";
+    public String getUrlFromExcel(String urlString) {//throws Exception{
+      
+        String urlVal = "";
         
-        //open connection to enable using the file
-        inputStream = new FileInputStream(new File(excelFilePath));
-        workbook = new XSSFWorkbook(inputStream);
-        urlsheet = workbook.getSheet("APIURL");
-        row = urlsheet.getRow(0);
-        cell = null;
-        int colNum = 0;
-        
-        /*Get column number - to be used to get value according to the heading(column name)*/
-        //Iterating through the headings until the last cell number in the first row(The headings/ column name)
-        //When the value in the column matches the value passed the variable colNum(Column Number) is assigned the column number        
-        for(int i=0;i<row.getLastCellNum();i++){
-            if(row.getCell(i).getStringCellValue().trim().equals(urlString)){
-                colNum = i;
+        try{
+
+            /*Declare and initialise objects*/
+            //Define file path - the file is located within the project - 
+            //Get the current working to locate the file should project be moved
+            String excelFilePath = workingDir+"\\APIURL.xlsx";
+
+            //open connection to enable using the file
+            inputStream = new FileInputStream(new File(excelFilePath));
+            workbook = new XSSFWorkbook(inputStream);
+            urlsheet = workbook.getSheet("APIURL");
+            row = urlsheet.getRow(0);
+            cell = null;
+            int colNum = 0;
+
+            /*Get column number - to be used to get value according to the heading(column name)*/
+            //Iterating through the headings until the last cell number in the first row(The headings/ column name)
+            //When the value in the column matches the value passed the variable colNum(Column Number) is assigned the column number        
+            for(int i=0;i<row.getLastCellNum();i++){
+                if(row.getCell(i).getStringCellValue().trim().equals(urlString)){
+                    colNum = i;
+                }
             }
+
+            //Get first row - The data is in first row
+            row = urlsheet.getRow(1);
+            //Get cell according to column number got from loop
+            cell = row.getCell(colNum);
+
+            //Get value according to cell number
+            urlVal = String.valueOf(cell.getStringCellValue());
+            //System.out.println("Value from the excel sheet:"+ urlVal);
+        
+        } catch (Exception e){
+            test.log(Status.FAIL,e.toString());
+            extReport.flush();
         }
-        
-        //Get first row - The data is in first row
-        row = urlsheet.getRow(1);
-        //Get cell according to column number got from loop
-        cell = row.getCell(colNum);
-        
-        //Get value according to cell number
-        String urlVal = String.valueOf(cell.getStringCellValue());
-//        System.out.println("Value from the excel sheet:"+ urlVal);
-       
+         
         //Return value
-       return urlVal; 
-    }
+       return urlVal;     
+    } 
     
     //Get api request
-    public int getRequest(String urlString) throws Exception {
-        
-        //Initialize url link variable to open connection and get Request
-        url = new URL(urlString);
-        con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        
-        //Getting response code to check if url connected 
-        int status = con.getResponseCode();
-        
-        //Check if url connected, if response if not 200 the test will report fail and exit test
-        if (status!=200){
-            System.out.print("Fail");
-            System.exit(0);
+    public int getRequest(String urlString) {//throws Exception {
+       
+        int status = 0;
+                
+        try{
+            //Initialize url link variable to open connection and get Request
+            url = new URL(urlString);
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            //Getting response code to check if url connected 
+            status = con.getResponseCode();
+
+            //Check if url connected, if response if not 200 the test will report fail and exit test
+            if (status!=200){
+                System.out.print("Fail to Connect");
+                test.log(Status.FAIL,"Fail to Connect");
+                extReport.flush();
+                System.exit(0);
+            }
+        } catch(Exception e){
+            test.log(Status.FAIL,e.toString());
+            extReport.flush();
         }
-        
         //returns the status
         return status;
+        
     }
     
     //Get list of items from a getRequest and retunr them
