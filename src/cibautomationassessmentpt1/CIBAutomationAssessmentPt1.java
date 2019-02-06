@@ -44,21 +44,19 @@ public class CIBAutomationAssessmentPt1  {
     private static ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter(System.getProperty("user.dir")+"\\CIBAutomationAssessmentPt1.html");
     private static ExtentReports extReport = new ExtentReports();
     private static ExtentTest test = extReport.createTest("CIBAutomationAssessmentPt1");  
-//    ExtentReports report; 
-//    ExtentTest logStatus;
-//    ExtentHtmlReporter  extentHtmlReporter;
+
     public static void main(String[] args) throws Exception {
         
-        // TODO code application logic here
-         extReport.attachReporter(htmlReporter);
-              
+        // TODO code application logic here  
         //Initialize contructor object
         CIBAutomationAssessmentPt1 cib = new CIBAutomationAssessmentPt1();
-            
+        
+        //attach report
+        extReport.attachReporter(htmlReporter);
+        
         /*Initialize html string variables   */
         //Calling the getURL method that returns the api url according to the name of column in the file
-        String urlAllDogsString = "AllDogBreedsListURL";
-       // String urlAllDogsString = cib.getUrlFromExcel("AllDogBreedsListURL");
+        String urlAllDogsString = cib.getUrlFromExcel("AllDogBreedsListURL");
         String listOfAllDogs;
         String urlRetreiverSubs = cib.getUrlFromExcel("AllRetrieverBreedsListURL");
         String urlrdmImgGolden = cib.getUrlFromExcel("RandomRetrieverImgURL");
